@@ -11,7 +11,9 @@ Real-time American Sign Language recognition using MediaPipe Hands and a stacked
 
 The system runs in real time from your webcam, overlaying hand landmarks and predicted gesture labels directly on the video feed.
 
-![Training Accuracy](models/training_accuracy.png)
+| HELLO Gesture | LOVE Gesture |
+|:---:|:---:|
+| ![HELLO](Hello.png) | ![LOVE](Love.png) |
 
 ---
 
