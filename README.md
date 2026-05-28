@@ -1,116 +1,156 @@
-Real-Time ASL Gesture Recognition
+# ASL MediaPipe LSTM
 
-A deep learning-based system for recognizing American Sign Language (ASL) gestures in real time using hand landmark sequences and temporal modeling.
+Real-time American Sign Language recognition using MediaPipe Hands and a stacked LSTM neural network. Achieves **99.15% accuracy** across 12 gesture classes on a standard webcam — no GPU or depth sensor required.
 
-About the Project
+> Bachelor's Dissertation — Nanjing University of Science and Technology, 2026
+> Author: Lahmidi Rida
 
-This project was developed as a final-year major project with the goal of improving accessibility in communication.
+---
 
-The system uses a webcam to capture live hand movements and converts them into text in real time. Unlike traditional approaches that rely on image or video datasets, this project uses hand landmark sequences extracted using MediaPipe.
+## Demo
 
-By modeling gestures as time-based sequences, the system captures both spatial and temporal information, leading to more accurate recognition of dynamic signs.
+The system runs in real time from your webcam, overlaying hand landmarks and predicted gesture labels directly on the video feed.
 
-Features
-Real-time ASL recognition via webcam
-Trained on landmark sequences (.npy), not images or videos
-Uses LSTM-based temporal modeling to capture motion
-Supports detection of up to 2 hands
-Landmark normalization for robustness to distance and position
-Smooth prediction using sequence buffering
-Easy to retrain or extend with new gestures
-Tech Stack
-Python
-OpenCV
-MediaPipe
-TensorFlow / Keras
-NumPy
-Scikit-learn
-Tkinter (optional GUI)
-Folder Structure
-Real-Time-ASL-Gesture-Recognition/
-├── data/                # Sequence training data (.npy)
-│   ├── HELLO/
-│   ├── YES/
-│   └── ...
-├── models/
-│   ├── asl_sequence_model.h5   # Trained LSTM model
-│   ├── class_names.npy         # Gesture labels
-│   └── metadata.json           # Input configuration
+![Training Accuracy](models/training_accuracy.png)
+
+---
+
+## Recognized Gestures
+
+| Gesture | Description |
+|--------|-------------|
+| HELLO | Open-hand wave at head height |
+| YES | Closed fist nodding up and down |
+| NO | Index finger wagging side to side |
+| PLEASE | Flat hand rubbing circular motion on chest |
+| THANK YOU | Flat hand moving from chin outward |
+| HELP | Thumb-up hand lifted from open palm |
+| FOOD | Bunched fingertips tapping toward lips |
+| WATER | W-shape hand tapping toward lips |
+| LOVE | Arms crossed over chest |
+| MORE | Both hands tapping bunched fingertips together |
+| STOP | Flat hand pushing forward firmly |
+| NO SIGN | Idle / no gesture |
+
+---
+
+## How It Works
+
+1. **MediaPipe Hands** detects and tracks 21 hand landmarks per hand in real time from a standard RGB webcam
+2. Each frame is converted into a **126-dimensional feature vector** (2 hands × 21 landmarks × 3 coordinates)
+3. A rolling buffer of 30 consecutive frames (~1 second) is passed to a **stacked LSTM model**
+4. The model outputs a softmax probability over 12 gesture classes
+5. A confidence threshold of 0.80 filters out uncertain predictions
+
+---
+
+## Model Architecture
+
+| Layer | Type | Units |
+|-------|------|-------|
+| 1 | LSTM | 128 (return_sequences=True) |
+| 2 | Dropout | 0.3 |
+| 3 | LSTM | 64 |
+| 4 | Dropout | 0.3 |
+| 5 | Dense (ReLU) | 64 |
+| 6 | Dense (Softmax) | 12 |
+
+---
+
+## Results
+
+| Metric | Value |
+|--------|-------|
+| Test Accuracy | 99.15% |
+| Macro Precision | 0.99 |
+| Macro Recall | 0.99 |
+| Macro F1-Score | 0.99 |
+| Inference Latency | < 20ms |
+| Training Time (CPU) | ~5 minutes |
+
+---
+
+## Project Structure
+
+```
 ├── src/
-│   ├── data_collection.py      # Collect training sequences
-│   ├── train_model.py          # Train LSTM model
-│   ├── asl_recognition.py      # Real-time inference
-│   ├── utils.py                # Helper functions
-│   └── asl_gui.py              # (Optional GUI)
+│   ├── data_collection.py   # Collect gesture sequences from webcam
+│   ├── train_model.py       # Train the LSTM model
+│   ├── asl_recognition.py   # Run real-time recognition
+│   └── utils.py             # Shared utilities
+├── models/
+│   ├── asl_sequence_model.h5
+│   ├── class_names.npy
+│   ├── training_accuracy.png
+│   └── training_loss.png
+├── data/                    # Collected gesture sequences (.npy)
 ├── requirements.txt
-├── README.md
-└── LICENSE
-Model Input Format
-Sequence length: 30 frames
-Features per frame: 126
-(2 hands × 21 landmarks × 3 coordinates)
-Input shape:
-(30, 126)
+└── README.md
+```
 
-Each gesture is represented as a sequence of normalized landmark positions over time, allowing the model to learn motion patterns instead of static poses.
+---
 
-How It Works
-The webcam captures live video input
-MediaPipe detects up to 2 hands and extracts 21 landmarks per hand
-Landmark coordinates are normalized relative to the wrist
-A rolling buffer collects 30 consecutive frames
-The sequence is passed into an LSTM neural network
-The model predicts the ASL gesture
-The prediction is displayed in real time
-Getting Started
-1. Clone the repository
-git clone https://github.com/kaushiks-info/Real-Time-ASL-Gesture-Recognition.git
-cd Real-Time-ASL-Gesture-Recognition
-2. Install dependencies
+## Installation
+
+```bash
+# Clone the repository
+git clone https://github.com/PLayboicarti-commits/asl-mediapipe-lstm.git
+cd asl-mediapipe-lstm
+
+# Create a virtual environment
+python -m venv venv
+venv\Scripts\activate  # Windows
+
+# Install dependencies
 pip install -r requirements.txt
-3. Collect your own training data
+```
+
+---
+
+## Usage
+
+### 1. Collect gesture data
+```bash
 python src/data_collection.py
-Enter a gesture name (e.g., HELLO, YES)
-Record multiple sequences per gesture
-Each sequence = 30 frames
-4. Train the model
+```
+Enter the gesture name and number of sequences when prompted. Press **SPACE** to record each sequence.
+
+### 2. Train the model
+```bash
 python src/train_model.py
+```
+Trains for 30 epochs and saves the model to `models/`.
 
-This will create:
-
-models/asl_sequence_model.h5
-models/class_names.npy
-5. Run real-time recognition
+### 3. Run real-time recognition
+```bash
 python src/asl_recognition.py
-Important Note – Model File
+```
+Opens your webcam. Press **Q** to quit.
 
-The trained model (asl_sequence_model.h5) is not included in this repository.
+---
 
-This is intentional because recognition accuracy depends heavily on:
+## Requirements
 
-your hand shape
-lighting conditions
-camera setup
+- Python 3.9+
+- Webcam
+- No GPU required
 
-Training your own model ensures better performance and personalization.
+Key dependencies:
+- `mediapipe`
+- `tensorflow`
+- `opencv-python`
+- `numpy`
+- `scikit-learn`
 
-Limitations
-Performance may drop if hands are partially blocked (occlusion)
-Requires both hands to be visible for some gestures
-Sensitive to lighting and background conditions
-Works best when gestures are clearly centered in the frame
-Future Work
-Improve robustness to occlusion and fast motion
-Add sentence generation from continuous gestures
-Expand dataset with multiple users
-Improve model architecture (e.g., Transformer-based models)
-Integrate a full GUI application
-Preview
-<h3>ASL Gesture Recognition - Screenshot</h3> <img src="https://github.com/user-attachments/assets/5582e240-6585-4032-9ffd-f960d2aef9af" width="500"> <img src="https://github.com/user-attachments/assets/726b8d8d-fa00-459f-b992-eb113515ecc2" width="300">
-License
+Install all with:
+```bash
+pip install -r requirements.txt
+```
 
-This project is licensed under the MIT License.
+---
 
-Summary
+## Author
 
-This project demonstrates a real-time sign language recognition system using sequence-based landmark data and LSTM modeling, trained directly from webcam input without relying on external video datasets.
+**Lahmidi Rida**
+Bachelor's Thesis — Software Engineering
+Nanjing University of Science and Technology, 2026
